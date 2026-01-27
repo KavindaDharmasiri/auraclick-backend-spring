@@ -1,0 +1,11 @@
+com\aura\photography\controller\AuthController$RegisterRequest.class
+com\aura\photography\AuraPhotographyApplication.class
+com\aura\photography\controller\AuthController$LoginRequest.class
+com\aura\photography\model\User$Role.class
+com\aura\photography\model\User$AuthProvider.class
+com\aura\photography\config\SecurityConfig.class
+com\aura\photography\service\AuthService.class
+com\aura\photography\controller\AuthController.class
+com\aura\photography\config\WebConfig.class
+com\aura\photography\repository\UserRepository.class
+com\aura\photography\model\User.class
