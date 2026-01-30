@@ -38,10 +38,10 @@ public class GearController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String search) {
-        
+
         Pageable pageable = PageRequest.of(page, size);
         Page<Gear> gearPage;
-        
+
         if (search != null && !search.isEmpty()) {
             gearPage = gearRepository.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCase(search, search, pageable);
         } else if (category != null && status != null) {
@@ -53,14 +53,14 @@ public class GearController {
         } else {
             gearPage = gearRepository.findAll(pageable);
         }
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("content", gearPage.getContent());
         response.put("totalElements", gearPage.getTotalElements());
         response.put("totalPages", gearPage.getTotalPages());
         response.put("currentPage", gearPage.getNumber());
         response.put("size", gearPage.getSize());
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -104,7 +104,7 @@ public class GearController {
         gear.setRentalPrice(rentalPrice);
         gear.setStatus(status);
         gear.setCondition(condition);
-        
+
         if (purchaseDate != null && !purchaseDate.isEmpty()) {
             gear.setPurchaseDate(java.time.LocalDate.parse(purchaseDate));
         }
@@ -178,8 +178,32 @@ public class GearController {
         return gearRepository.findByCategory(category);
     }
 
-    @GetMapping("/status/{status}")
-    public List<Gear> getGearByStatus(@PathVariable String status) {
-        return gearRepository.findByStatus(status);
+    @GetMapping("/filter")
+    public ResponseEntity<Map<String, Object>> filterGear(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> brands,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) String status) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Gear> gearPage;
+
+        if (category != null || (brands != null && !brands.isEmpty()) || minPrice != null || maxPrice != null || status != null) {
+            gearPage = gearRepository.findByFilters(category, brands, minPrice, maxPrice, status, pageable);
+        } else {
+            gearPage = gearRepository.findAll(pageable);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", gearPage.getContent());
+        response.put("totalElements", gearPage.getTotalElements());
+        response.put("totalPages", gearPage.getTotalPages());
+        response.put("currentPage", gearPage.getNumber());
+        response.put("size", gearPage.getSize());
+
+        return ResponseEntity.ok(response);
     }
 }
