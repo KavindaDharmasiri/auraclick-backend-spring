@@ -26,8 +26,8 @@ public class Service {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String code;
     private String name;
-    private String description;
 
     @ManyToMany(mappedBy = "services")
     private Set<BookingType> bookingTypes = new HashSet<>();
@@ -36,8 +36,8 @@ public class Service {
         this.name = name;
     }
 
-    public Service(String name, String description) {
+    public Service(String name, String code) {
         this.name = name;
-        this.description = description;
+        this.code = code;
     }
 }

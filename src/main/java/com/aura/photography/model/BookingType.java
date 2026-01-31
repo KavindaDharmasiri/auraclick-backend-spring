@@ -26,6 +26,7 @@ public class BookingType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String code;
     private String name;
 
     @ManyToMany
@@ -38,5 +39,10 @@ public class BookingType {
 
     public BookingType(String name) {
         this.name = name;
+    }
+
+    public BookingType(String name, String code) {
+        this.name = name;
+        this.code = code;
     }
 }

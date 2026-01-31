@@ -8,6 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface ServiceRepository extends JpaRepository<Service, Long> {
-    Optional<Service> findByName(String name);
-    boolean existsByName(String name);
+    Optional<Service> findByCode(String code);
 }

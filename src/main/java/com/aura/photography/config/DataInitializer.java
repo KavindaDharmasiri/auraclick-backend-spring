@@ -79,26 +79,42 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeBookingTypesAndServices() {
-        String[] services = {"Outdoor Portrait", "Studio Session", "Wedding Package", "Street Photography"};
-        for (String serviceName : services) {
+        String[][] services = {
+            {"Outdoor Portrait", "OP"},
+            {"Studio Session", "SS"},
+            {"Wedding Package (Gold)", "WPG"},
+            {"Wedding Package (Platinum)", "WPP"},
+            {"Wedding Package (Bespoke)", "WPB"},
+            {"Street Photography", "SP"}
+        };
+        for (String[] serviceData : services) {
+            String serviceName = serviceData[0];
+            String serviceCode = serviceData[1];
             if (!serviceRepository.existsByName(serviceName)) {
-                Service service = new Service(serviceName);
+                Service service = new Service(serviceName, serviceCode);
                 serviceRepository.save(service);
-                System.out.println("Created service: " + serviceName);
             }
         }
 
-        String[] bookingTypes = {"Weddings", "Studio", "Photoshoots", "Rent"};
-        for (String typeName : bookingTypes) {
+        String[][] bookingTypes = {
+            {"Weddings", "WED"},
+            {"Studio", "STU"},
+            {"Photoshoots", "PHO"},
+            {"Rent", "RNT"}
+        };
+        for (String[] typeData : bookingTypes) {
+            String typeName = typeData[0];
+            String typeCode = typeData[1];
             if (!bookingTypeRepository.existsByName(typeName)) {
-                BookingType bookingType = new BookingType(typeName);
+                BookingType bookingType = new BookingType(typeName, typeCode);
                 bookingTypeRepository.save(bookingType);
-                System.out.println("Created booking type: " + typeName);
             }
         }
 
         // Map services to booking types
-        mapServiceToBookingType("Weddings", "Wedding Package");
+        mapServiceToBookingType("Weddings", "Wedding Package (Gold)");
+        mapServiceToBookingType("Weddings", "Wedding Package (Platinum)");
+        mapServiceToBookingType("Weddings", "Wedding Package (Bespoke)");
         mapServiceToBookingType("Studio", "Studio Session");
         mapServiceToBookingType("Photoshoots", "Outdoor Portrait");
         mapServiceToBookingType("Photoshoots", "Street Photography");
@@ -110,7 +126,6 @@ public class DataInitializer implements CommandLineRunner {
                 if (!bookingType.getServices().contains(service)) {
                     bookingType.getServices().add(service);
                     bookingTypeRepository.save(bookingType);
-                    System.out.println("Mapped service '" + serviceName + "' to booking type '" + bookingTypeName + "'");
                 }
             });
         });
