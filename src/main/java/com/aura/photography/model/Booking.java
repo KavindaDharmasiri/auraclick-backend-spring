@@ -32,6 +32,10 @@ public class Booking {
     @JoinColumn(name = "service_id", nullable = false)
     private Service service;
 
+    @OneToOne
+    @JoinColumn(name = "payment_id", nullable = true)
+    private Payment payment;
+
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private BookingStatus status = BookingStatus.PENDING;
@@ -41,7 +45,7 @@ public class Booking {
     private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
 
     @Column(name = "booking_date", nullable = true)
-    private LocalDateTime bookingDate;
+    private LocalDate bookingDate;
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp

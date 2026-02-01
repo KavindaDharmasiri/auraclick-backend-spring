@@ -6,16 +6,15 @@ import lombok.Getter;
 /**
  * @Author: kasun
  * @Package: com.aura.photography.util.enums
- * @Enum: PaymentStatus
- * @Created on: 1/31/2026 at 10:16 AM
+ * @Enum: PaymentType
+ * @Created on: 2/1/2026 at 8:24 PM
  */
 @Getter
 @AllArgsConstructor
-public enum PaymentStatus {
-
-    PAID("PAID", "Paid"),
-    PARTIALLY_PAID("PARTIALLY_PAID", "Partial"),
-    UNPAID("UNPAID", "Unpaid");
+public enum PaymentType {
+    CASH("CASH", "Cash"),
+    CARD("CARD", "Card"),
+    BANK_TRANSFER("BANK_TRANSFER", "Bank Transfer");
 
     private final String code;
     private final String description;

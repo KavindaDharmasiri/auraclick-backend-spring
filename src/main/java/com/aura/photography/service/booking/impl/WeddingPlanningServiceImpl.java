@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static com.aura.photography.util.common.CommonVarStore.*;
@@ -38,7 +39,7 @@ public class WeddingPlanningServiceImpl implements WeddingPlanningService {
     public ResponseEntity<CommonResponse> setBooking(WeddingDTO weddingDTO) {
         try {
             BookingDTO bookingDTO = new BookingDTO();
-            bookingDTO.setBookingDate(LocalDateTime.now());
+            bookingDTO.setBookingDate(LocalDate.now());
             String serviceType = "";
             if(weddingDTO.getPackageId() == 1)
                 serviceType = GOLD;
@@ -69,7 +70,7 @@ public class WeddingPlanningServiceImpl implements WeddingPlanningService {
         weddingDetails.setPartner1FullName(weddingDTO.getPartner1FullName());
         weddingDetails.setPartner2FullName(weddingDTO.getPartner2FullName());
         weddingDetails.setVision(weddingDTO.getVision());
-        weddingDetails.setNumberOfGuests(weddingDTO.getNumberOfGuests());
+        weddingDetails.setNumberOfGuestsRange(weddingDTO.getNumberOfGuestsRange());
         return weddingDetails;
     }
 }

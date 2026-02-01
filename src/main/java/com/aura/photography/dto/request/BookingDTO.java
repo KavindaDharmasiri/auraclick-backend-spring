@@ -1,14 +1,10 @@
 package com.aura.photography.dto.request;
 
-import com.aura.photography.model.Service;
-import com.aura.photography.util.enums.BookingStatus;
 import com.aura.photography.util.enums.PaymentStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import com.aura.photography.util.enums.PaymentType;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * @Author: kasun
@@ -19,7 +15,9 @@ import java.time.LocalDateTime;
 @Data
 public class BookingDTO {
     private String service;
+    private PaymentType paymentType;
+    private Double paymentAmount;
     private PaymentStatus paymentStatus;
-    private LocalDateTime bookingDate;
+    private LocalDate bookingDate;
     private String createdBy;
 }

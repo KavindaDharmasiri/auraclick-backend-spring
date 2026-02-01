@@ -2,7 +2,9 @@ package com.aura.photography.service.booking.impl;
 
 import com.aura.photography.dto.request.BookingDTO;
 import com.aura.photography.model.Booking;
+import com.aura.photography.model.Payment;
 import com.aura.photography.repository.BookingRepository;
+import com.aura.photography.repository.PaymentRepository;
 import com.aura.photography.repository.ServiceRepository;
 import com.aura.photography.repository.UserRepository;
 import com.aura.photography.service.booking.BookingService;
@@ -25,6 +27,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ServiceRepository serviceRepository;
+    private final PaymentRepository paymentRepository;
 
     @Override
     public Booking createBooking(BookingDTO bookingDTO) {
@@ -36,6 +39,14 @@ public class BookingServiceImpl implements BookingService {
             booking.setBookingDate(bookingDTO.getBookingDate());
             booking.setService(serviceRepository.findByCode(bookingDTO.getService())
                     .orElseThrow(() -> new IllegalArgumentException("Service not found with code: " + bookingDTO.getService())));
+
+            if(bookingDTO.getPaymentStatus() != null){
+                Payment payment = new Payment();
+                payment.setAmount(bookingDTO.getPaymentAmount());
+                payment.setPaymentType(bookingDTO.getPaymentType());
+
+                booking.setPayment(paymentRepository.save(payment));
+            }
 
             log.debug("Creating booking: {}", booking);
             return bookingRepository.save(booking);

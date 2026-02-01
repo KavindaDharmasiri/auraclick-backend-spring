@@ -35,8 +35,8 @@ public class WeddingDetails {
     private  String partner1FullName;
     @Column(name = "partner2_full_name")
     private String partner2FullName;
-    @Column(name = "number_of_guests")
-    private int numberOfGuests;
+    @Column(name = "number_of_guests_range")
+    private String numberOfGuestsRange;
     @Column(length = 2000)
     private String vision;
     @Column(name = "package_id")
