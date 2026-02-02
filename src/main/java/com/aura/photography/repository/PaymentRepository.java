@@ -4,12 +4,9 @@ import com.aura.photography.model.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * @Author: kasun
- * @Package: com.aura.photography.repository
- * @Interface: PaymentRepository
- * @Created on: 2/1/2026 at 9:40 PM
- */
+import java.util.List;
+
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    List<Payment> findAllByOrderByPaymentDateDesc();
 }

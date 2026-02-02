@@ -1,6 +1,6 @@
 package com.aura.photography.repository;
 
-import com.aura.photography.model.Cart;
+import com.aura.photography.model.Order;
 import com.aura.photography.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CartRepository extends JpaRepository<Cart, Long> {
-    List<Cart> findByUser(User user);
+public interface OrderRepository extends JpaRepository<Order, Long> {
+    List<Order> findAllByOrderByOrderDateDesc();
+    List<Order> findByUserOrderByOrderDateDesc(User user);
 }
