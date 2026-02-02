@@ -14,12 +14,11 @@ public final class CommonVarStore {
     public static final String RENT = "RNT";
 
     // Service Types
-    public static final String OUTDOOR_POTRAIT = "OP";
     public static final String STUDIO_SESSION = "SS";
+    public static final String STUDIO_BOOKING = "SB";
     public static final String GOLD = "WPG";
     public static final String PLATINUM = "WPP";
     public static final String BESPOKE = "WPB";
-    public static final String STREET_PHOTOGRAPHY = "SP";
 
     /* Response codes */
     public static final String RESPONSE_CODE_SUCCESS = "SUCCESS";

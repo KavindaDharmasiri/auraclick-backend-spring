@@ -81,11 +81,14 @@ public class DataInitializer implements CommandLineRunner {
     private void initializeBookingTypesAndServices() {
         String[][] services = {
             {"Outdoor Portrait", "OP"},
-            {"Studio Session", "SS"},
+            {"Studio Booking", "SB"},
             {"Wedding Package (Gold)", "WPG"},
             {"Wedding Package (Platinum)", "WPP"},
             {"Wedding Package (Bespoke)", "WPB"},
-            {"Street Photography", "SP"}
+            {"Studio Sessions", "SS"},
+            {"Outdoor Shoots", "OS"},
+            {"Commercial", "COM"},
+            {"Events", "EVT"}
         };
         for (String[] serviceData : services) {
             String serviceName = serviceData[0];
@@ -115,9 +118,11 @@ public class DataInitializer implements CommandLineRunner {
         mapServiceToBookingType("Weddings", "Wedding Package (Gold)");
         mapServiceToBookingType("Weddings", "Wedding Package (Platinum)");
         mapServiceToBookingType("Weddings", "Wedding Package (Bespoke)");
-        mapServiceToBookingType("Studio", "Studio Session");
-        mapServiceToBookingType("Photoshoots", "Outdoor Portrait");
-        mapServiceToBookingType("Photoshoots", "Street Photography");
+        mapServiceToBookingType("Studio", "Studio Booking");
+        mapServiceToBookingType("Photoshoots", "Studio Sessions");
+        mapServiceToBookingType("Photoshoots", "Outdoor Shoots");
+        mapServiceToBookingType("Photoshoots", "Commercial");
+        mapServiceToBookingType("Photoshoots", "Events");
     }
 
     private void mapServiceToBookingType(String bookingTypeName, String serviceName) {

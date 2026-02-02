@@ -1,8 +1,10 @@
 package com.aura.photography.controller;
 
 import com.aura.photography.dto.request.StudioDTO;
+import com.aura.photography.dto.request.PhotoshootDTO;
 import com.aura.photography.dto.request.WeddingDTO;
 import com.aura.photography.service.booking.StudioService;
+import com.aura.photography.service.booking.PhotoshootService;
 import com.aura.photography.service.booking.WeddingPlanningService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +31,7 @@ public class BookingController {
 
     private final WeddingPlanningService weddingPlanningService;
     private final StudioService studioService;
+    private final PhotoshootService photoshootService;
 
     // Wedding planning related endpoints would go here
     @Operation(summary = "Set a wedding booking", description = "Create a new wedding planning booking")
@@ -55,5 +58,15 @@ public class BookingController {
     public ResponseEntity<?> getAvailableTimeSlots(@RequestParam int studioId, @RequestParam String bookingDate, Principal principal) {
         log.info("BookingController -> getAvailableTimeSlots -> (Request Type: GET) -> /v1/bookings/studioBooking/getAvailableTimeSlots -> Request by User: {}", principal.getName());
         return studioService.getAvailableTimeSlots(studioId, bookingDate);
+    }
+
+    // Photoshoot Booking related endpoints
+    @Operation(summary = "Set a photoshoot booking", description = "Create a new photoshoot booking")
+    @PostMapping("photoshootBooking/setBooking")
+    public ResponseEntity<?> setPhotoshootBooking(@RequestBody PhotoshootDTO photoshootDTO, Principal principal) {
+        log.info("BookingController -> setPhotoshootBooking -> (Request Type: POST) -> /v1/bookings/photoshootBooking/setBooking -> Request by User: {}", principal.getName());
+
+        photoshootDTO.setCreatedBy(principal.getName());
+        return photoshootService.setPhotoshootBooking(photoshootDTO);
     }
 }
