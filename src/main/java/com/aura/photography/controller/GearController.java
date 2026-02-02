@@ -1,5 +1,6 @@
 package com.aura.photography.controller;
 
+import com.aura.photography.dto.request.CreateGearDTO;
 import com.aura.photography.model.Gear;
 import com.aura.photography.repository.GearRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,31 @@ public class GearController {
     public ResponseEntity<Gear> getGearById(@PathVariable Long id) {
         Optional<Gear> gear = gearRepository.findById(id);
         return gear.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<?> createGear(@RequestBody CreateGearDTO gearDTO) {
+        if (gearRepository.existsBySku(gearDTO.getSku())) {
+            return ResponseEntity.badRequest().body("SKU already exists");
+        }
+
+        Gear gear = new Gear();
+        gear.setName(gearDTO.getName());
+        gear.setSku(gearDTO.getSku());
+        gear.setBrand(gearDTO.getBrand());
+        gear.setModel(gearDTO.getModel());
+        gear.setSerialNumber(gearDTO.getSerialNumber());
+        gear.setCategory(gearDTO.getCategory());
+        gear.setDescription(gearDTO.getDescription());
+        gear.setStock(gearDTO.getStock());
+        gear.setTotalStock(gearDTO.getTotalStock());
+        gear.setRentalPrice(gearDTO.getRentalPrice());
+        gear.setStatus(gearDTO.getStatus());
+        gear.setCondition(gearDTO.getCondition());
+        gear.setImages(gearDTO.getImageUrls());
+
+        Gear savedGear = gearRepository.save(gear);
+        return ResponseEntity.ok(savedGear);
     }
 
     @PostMapping

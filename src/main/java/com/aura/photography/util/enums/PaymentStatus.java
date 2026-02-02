@@ -15,7 +15,7 @@ public enum PaymentStatus {
 
     PAID("PAID", "Paid"),
     PARTIALLY_PAID("PARTIALLY_PAID", "Partial"),
-    UNPAID("UNPAID", "Unpaid");
+    UNPAID("UNPAID", "Unpaid"), COMPLETED("COMPLETED","Completed" );
 
     private final String code;
     private final String description;

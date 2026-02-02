@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -26,6 +27,22 @@ public class CartController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @GetMapping
+    public ResponseEntity<?> getCart(Authentication authentication) {
+        try {
+            String userEmail = authentication.getName();
+            User user = userRepository.findByEmail(userEmail).orElse(null);
+            if (user == null) {
+                return ResponseEntity.badRequest().body("User not found");
+            }
+            
+            List<Cart> cartItems = cartRepository.findByUser(user);
+            return ResponseEntity.ok(cartItems);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to retrieve cart");
+        }
+    }
     
     @PostMapping("/add")
     public ResponseEntity<?> addToCart(@RequestBody Map<String, Object> request, Authentication authentication) {
