@@ -44,6 +44,9 @@ public class BookingServiceImpl implements BookingService {
                 Payment payment = new Payment();
                 payment.setAmount(bookingDTO.getPaymentAmount());
                 payment.setPaymentType(bookingDTO.getPaymentType());
+                // Ensure required relations/fields are set to avoid JPA retrieval errors later
+                payment.setPaymentStatus(bookingDTO.getPaymentStatus() != null ? bookingDTO.getPaymentStatus() : PaymentStatus.UNPAID);
+                payment.setUser(booking.getUser());
 
                 booking.setPayment(paymentRepository.save(payment));
             }
