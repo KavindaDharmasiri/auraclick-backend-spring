@@ -1,5 +1,7 @@
 package com.aura.photography.dto.request;
 
+import java.util.List;
+
 public class CreateGearDTO {
     private String name;
     private String sku;
@@ -13,6 +15,7 @@ public class CreateGearDTO {
     private Double rentalPrice;
     private String status;
     private String condition;
+    private List<String> imageUrls;
 
     // Constructors
     public CreateGearDTO() {}
@@ -53,4 +56,7 @@ public class CreateGearDTO {
 
     public String getCondition() { return condition; }
     public void setCondition(String condition) { this.condition = condition; }
+
+    public List<String> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
 }

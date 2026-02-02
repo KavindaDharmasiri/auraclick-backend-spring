@@ -90,6 +90,7 @@ public class GearController {
         gear.setRentalPrice(gearDTO.getRentalPrice());
         gear.setStatus(gearDTO.getStatus());
         gear.setCondition(gearDTO.getCondition());
+        gear.setImages(gearDTO.getImageUrls());
 
         Gear savedGear = gearRepository.save(gear);
         return ResponseEntity.ok(savedGear);
