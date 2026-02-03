@@ -278,4 +278,30 @@ public class OrderController {
             return List.of(timeSlotString);
         }
     }
+
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestBody Map<String, String> statusData, Authentication authentication) {
+        try {
+            System.out.println("11");
+            String userEmail = authentication.getName();
+            User user = userRepository.findByEmail(userEmail).orElse(null);
+//            if (user == null || !"ADMIN".equals(user.getRole())) {
+//                return ResponseEntity.status(403).body("Access denied");
+//            }
+
+            Order order = orderRepository.findById(orderId).orElse(null);
+            if (order == null) {
+                return ResponseEntity.badRequest().body("Order not found");
+            }
+            System.out.println(statusData.get("status"));
+            String newStatus = statusData.get("status");
+            order.setStatus(newStatus);
+            System.out.println("22");
+            orderRepository.save(order);
+
+            return ResponseEntity.ok(Map.of("message", "Order status updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to update order status: " + e.getMessage());
+        }
+    }
 }

@@ -222,6 +222,16 @@ public class GearController {
         } else {
             gearPage = gearRepository.findAll(pageable);
         }
+        
+        System.out.println("Filter result - Total elements: " + gearPage.getTotalElements());
+        if (gearPage.getTotalElements() == 0) {
+            // Debug: Show all gear to see what's actually in the database
+            List<Gear> allGear = gearRepository.findAll();
+            System.out.println("All gear in database: " + allGear.size());
+            for (Gear gear : allGear) {
+                System.out.println("Gear: " + gear.getName() + ", Category: " + gear.getCategory() + ", Brand: " + gear.getBrand() + ", Price: " + gear.getRentalPrice());
+            }
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", gearPage.getContent());
@@ -231,5 +241,17 @@ public class GearController {
         response.put("size", gearPage.getSize());
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/debug")
+    public ResponseEntity<?> debugGear() {
+        List<Gear> allGear = gearRepository.findAll();
+        System.out.println("Total gear items: " + allGear.size());
+        
+        Map<String, Object> debug = new HashMap<>();
+        debug.put("totalCount", allGear.size());
+        debug.put("items", allGear);
+        
+        return ResponseEntity.ok(debug);
     }
 }
