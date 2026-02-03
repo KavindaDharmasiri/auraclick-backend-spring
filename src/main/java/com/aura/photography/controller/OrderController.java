@@ -1,6 +1,9 @@
 package com.aura.photography.controller;
 
+import com.aura.photography.dto.response.BookingDTO;
 import com.aura.photography.dto.response.OrderDTO;
+import com.aura.photography.dto.response.PhotoshootBookingDTO;
+import com.aura.photography.dto.response.StudioBookingDTO;
 import com.aura.photography.model.*;
 import com.aura.photography.repository.*;
 import com.aura.photography.util.enums.PaymentStatus;
@@ -13,9 +16,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -39,6 +44,15 @@ public class OrderController {
     
     @Autowired
     private OrderItemRepository orderItemRepository;
+    
+    @Autowired
+    private BookingRepository bookingRepository;
+    
+    @Autowired
+    private PhotoshootBookingRepository photoshootBookingRepository;
+    
+    @Autowired
+    private StudioBookingRepository studioBookingRepository;
     
     @GetMapping
     public ResponseEntity<?> getAllOrders() {
@@ -162,29 +176,106 @@ public class OrderController {
         }
     }
     
-    @PutMapping("/{orderId}/status")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestBody Map<String, String> statusData, Authentication authentication) {
+    @GetMapping("/bookings")
+    public ResponseEntity<?> getUserBookings(Authentication authentication) {
         try {
-            System.out.println("11");
             String userEmail = authentication.getName();
             User user = userRepository.findByEmail(userEmail).orElse(null);
-//            if (user == null || !"ADMIN".equals(user.getRole())) {
-//                return ResponseEntity.status(403).body("Access denied");
-//            }
-            
-            Order order = orderRepository.findById(orderId).orElse(null);
-            if (order == null) {
-                return ResponseEntity.badRequest().body("Order not found");
+            if (user == null) {
+                return ResponseEntity.badRequest().body("User not found");
             }
-            System.out.println(statusData.get("status"));
-            String newStatus = statusData.get("status");
-            order.setStatus(newStatus);
-            System.out.println("22");
-            orderRepository.save(order);
             
-            return ResponseEntity.ok(Map.of("message", "Order status updated successfully"));
+            Map<String, Object> allBookings = new HashMap<>();
+            
+            // Get general bookings and convert to DTO
+            var generalBookings = bookingRepository.findByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .map(booking -> new BookingDTO(
+                    booking.getId(),
+                    booking.getService() != null ? booking.getService().getName() : "General Service",
+                    booking.getStatus().toString(),
+                    booking.getPaymentStatus().toString(),
+                    booking.getBookingDate(),
+                    booking.getCreatedAt(),
+                    booking.getPayment() != null ? booking.getPayment().getAmount() : 0.0
+                ))
+                .collect(Collectors.toList());
+            allBookings.put("general", generalBookings);
+            
+            // Get photoshoot bookings and convert to DTO
+            var photoshootBookings = photoshootBookingRepository.findByBooking_UserOrderByBooking_CreatedAtDesc(user)
+                .stream()
+                .map(psBooking -> new PhotoshootBookingDTO(
+                    psBooking.getId(),
+                    psBooking.getBooking().getStatus().toString(),
+                    psBooking.getBooking().getPaymentStatus().toString(),
+                    psBooking.getBooking().getBookingDate(),
+                    psBooking.getBooking().getCreatedAt(),
+                    psBooking.getLocation(),
+                    psBooking.getDuration() != null ? psBooking.getDuration().toString() : "N/A",
+                    psBooking.getBooking().getPayment() != null ? psBooking.getBooking().getPayment().getAmount() : 0.0
+                ))
+                .collect(Collectors.toList());
+            allBookings.put("photoshoot", photoshootBookings);
+            
+            // Get studio bookings and convert to DTO
+            var studioBookings = studioBookingRepository.findByBooking_UserOrderByBooking_CreatedAtDesc(user)
+                .stream()
+                .map(studioBooking -> new StudioBookingDTO(
+                    studioBooking.getId(),
+                    studioBooking.getBooking().getStatus().toString(),
+                    studioBooking.getBooking().getPaymentStatus().toString(),
+                    studioBooking.getBooking().getBookingDate(),
+                    studioBooking.getBooking().getCreatedAt(),
+                    getStudioName(studioBooking.getStudioId()),
+                    getTimeSlotNames(studioBooking.getTimeSlot()),
+                    studioBooking.getBooking().getPayment() != null ? studioBooking.getBooking().getPayment().getAmount() : 0.0
+                ))
+                .collect(Collectors.toList());
+            allBookings.put("studio", studioBookings);
+            
+            return ResponseEntity.ok(allBookings);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to update order status: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Failed to retrieve bookings");
+        }
+    }
+    
+    private String getStudioName(int studioId) {
+        switch (studioId) {
+            case 1: return "Main Hall";
+            case 2: return "Cyc Wall";
+            case 3: return "Boudoir Suite";
+            default: return "Studio " + studioId;
+        }
+    }
+    
+    private List<String> getTimeSlotNames(String timeSlotString) {
+        if (timeSlotString == null || timeSlotString.isEmpty()) return List.of();
+        
+        try {
+            // Parse comma-separated string like "1,2,3" to List<Integer>
+            List<Integer> timeSlotIds = List.of(timeSlotString.split(","))
+                .stream()
+                .map(String::trim)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+            
+            Map<Integer, String> timeSlotMap = Map.of(
+                1, "09:00 - 11:00",
+                2, "11:00 - 13:00",
+                3, "13:00 - 15:00",
+                4, "15:00 - 17:00",
+                5, "17:00 - 19:00",
+                6, "19:00 - 21:00"
+            );
+            
+            return timeSlotIds.stream()
+                .map(id -> timeSlotMap.getOrDefault(id, "Unknown"))
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            // If parsing fails, return the original string as single item
+            return List.of(timeSlotString);
         }
     }
 }

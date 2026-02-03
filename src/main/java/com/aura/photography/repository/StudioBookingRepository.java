@@ -2,6 +2,7 @@ package com.aura.photography.repository;
 
 import com.aura.photography.model.Booking;
 import com.aura.photography.model.StudioBooking;
+import com.aura.photography.model.User;
 import com.aura.photography.util.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -26,4 +27,6 @@ public interface StudioBookingRepository extends JpaRepository<StudioBooking, Lo
     );
 
     Optional<StudioBooking> findByBooking_Id(Long bookingId);
+    
+    List<StudioBooking> findByBooking_UserOrderByBooking_CreatedAtDesc(User user);
 }

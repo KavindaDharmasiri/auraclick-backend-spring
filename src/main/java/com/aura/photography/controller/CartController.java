@@ -40,6 +40,7 @@ public class CartController {
             List<Cart> cartItems = cartRepository.findByUser(user);
             return ResponseEntity.ok(cartItems);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body("Failed to retrieve cart");
         }
     }
