@@ -1,8 +1,13 @@
 package com.aura.photography.controller;
 
 import com.aura.photography.dto.request.StudioDTO;
+import com.aura.photography.dto.request.PhotoshootDTO;
+import com.aura.photography.dto.request.BookingAdminDTO;
+import com.aura.photography.dto.request.BookingStatusUpdateDTO;
 import com.aura.photography.dto.request.WeddingDTO;
 import com.aura.photography.service.booking.StudioService;
+import com.aura.photography.service.booking.PhotoshootService;
+import com.aura.photography.service.booking.BookingAdminService;
 import com.aura.photography.service.booking.WeddingPlanningService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +34,8 @@ public class BookingController {
 
     private final WeddingPlanningService weddingPlanningService;
     private final StudioService studioService;
+    private final PhotoshootService photoshootService;
+    private final BookingAdminService bookingAdminService;
 
     // Wedding planning related endpoints would go here
     @Operation(summary = "Set a wedding booking", description = "Create a new wedding planning booking")
@@ -55,5 +62,39 @@ public class BookingController {
     public ResponseEntity<?> getAvailableTimeSlots(@RequestParam int studioId, @RequestParam String bookingDate, Principal principal) {
         log.info("BookingController -> getAvailableTimeSlots -> (Request Type: GET) -> /v1/bookings/studioBooking/getAvailableTimeSlots -> Request by User: {}", principal.getName());
         return studioService.getAvailableTimeSlots(studioId, bookingDate);
+    }
+
+    // Photoshoot Booking related endpoints
+    @Operation(summary = "Set a photoshoot booking", description = "Create a new photoshoot booking")
+    @PostMapping("photoshootBooking/setBooking")
+    public ResponseEntity<?> setPhotoshootBooking(@RequestBody PhotoshootDTO photoshootDTO, Principal principal) {
+        log.info("BookingController -> setPhotoshootBooking -> (Request Type: POST) -> /v1/bookings/photoshootBooking/setBooking -> Request by User: {}", principal.getName());
+
+        photoshootDTO.setCreatedBy(principal.getName());
+        return photoshootService.setPhotoshootBooking(photoshootDTO);
+    }
+
+    // Admin booking table endpoint
+    @Operation(summary = "Get booking table (admin)", description = "Fetch booking table data using filters and pagination")
+    @PostMapping("admin/getBookingTable")
+    public ResponseEntity<?> getBookingTable(@RequestBody BookingAdminDTO requestDTO, Principal principal) {
+        log.info("BookingController -> getBookingTable -> (Request Type: POST) -> /v1/bookings/admin/getBookingTable -> Request by User: {}", principal != null ? principal.getName() : "anonymous");
+        return bookingAdminService.getBookingTable(requestDTO);
+    }
+
+    // Admin dashboard metrics
+    @Operation(summary = "Get dashboard metrics (admin)", description = "Totals for current month and % change vs previous month")
+    @GetMapping("admin/metrics")
+    public ResponseEntity<?> getDashboardMetrics(Principal principal) {
+        log.info("BookingController -> getDashboardMetrics -> (Request Type: GET) -> /v1/bookings/admin/metrics -> Request by User: {}", principal != null ? principal.getName() : "anonymous");
+        return bookingAdminService.getDashboardMetrics();
+    }
+
+    // Admin update statuses (bookingStatus, paymentStatus)
+    @Operation(summary = "Update booking/payment status (admin)", description = "Dynamically update bookingStatus and/or paymentStatus")
+    @PostMapping("admin/updateStatuses")
+    public ResponseEntity<?> updateStatuses(@RequestBody BookingStatusUpdateDTO requestDTO, Principal principal) {
+        log.info("BookingController -> updateStatuses -> (Request Type: PATCH) -> /v1/bookings/admin/updateStatuses -> Request by User: {}", principal != null ? principal.getName() : "anonymous");
+        return bookingAdminService.updateStatuses(requestDTO);
     }
 }

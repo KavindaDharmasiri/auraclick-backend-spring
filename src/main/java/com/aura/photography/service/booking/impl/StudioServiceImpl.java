@@ -66,6 +66,12 @@ public class StudioServiceImpl implements StudioService {
             List<StudioBooking> studioBookings = studioBookingRepository.findAllByBooking_BookingDateAndStudioIdAndBooking_StatusNotIn(
                     DateConverter.convertToLocalDate(bookingDate), studioId, List.of(BookingStatus.COMPLETED, BookingStatus.CANCELLED));
 
+            if(studioBookings.isEmpty())
+            {
+                log.debug("All time slots are available");
+                return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_SUCCESS, "All time slots are available", List.of(1, 2, 3, 4), null), HttpStatus.OK);
+            }
+
             // Extract booked time slots
             List<String> bookedTimeSlots = studioBookings.stream()
                     .map(StudioBooking::getTimeSlot)
