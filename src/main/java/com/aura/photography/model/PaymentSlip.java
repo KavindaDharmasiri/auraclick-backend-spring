@@ -11,8 +11,12 @@ public class PaymentSlip {
     private Long id;
     
     @OneToOne
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id")
     private Order order;
+    
+    @OneToOne
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
     
     @Column(name = "file_path", nullable = false)
     private String filePath;
@@ -32,11 +36,21 @@ public class PaymentSlip {
         this.uploadedAt = LocalDateTime.now();
     }
     
+    public PaymentSlip(Booking booking, String filePath, String fileName) {
+        this.booking = booking;
+        this.filePath = filePath;
+        this.fileName = fileName;
+        this.uploadedAt = LocalDateTime.now();
+    }
+    
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
     public Order getOrder() { return order; }
     public void setOrder(Order order) { this.order = order; }
+    
+    public Booking getBooking() { return booking; }
+    public void setBooking(Booking booking) { this.booking = booking; }
     
     public String getFilePath() { return filePath; }
     public void setFilePath(String filePath) { this.filePath = filePath; }

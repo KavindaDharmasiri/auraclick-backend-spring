@@ -32,4 +32,8 @@ public class StudioDTO {
     private Set<Integer> timeSlot;
     @Schema(description = "User who created the booking (Set automatically)", hidden = true)
     private String createdBy;
+    @Schema(description = "Payment slip file in base64 format", example = "")
+    private String fileBase64;
+    @Schema(description = "Payment slip file name", example = "slip.jpg")
+    private String fileName;
 }

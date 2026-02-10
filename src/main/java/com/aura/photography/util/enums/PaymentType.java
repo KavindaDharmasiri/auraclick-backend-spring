@@ -14,6 +14,7 @@ import lombok.Getter;
 public enum PaymentType {
     CASH("CASH", "Cash"),
     CARD("CARD", "Card"),
+    SLIP("SLIP", "Slip"),
     BANK_TRANSFER("BANK_TRANSFER", "Bank Transfer");
 
     private final String code;

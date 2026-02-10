@@ -4,7 +4,9 @@ import com.aura.photography.dto.request.BookingDTO;
 import com.aura.photography.dto.request.StudioDTO;
 import com.aura.photography.dto.response.CommonResponse;
 import com.aura.photography.model.Booking;
+import com.aura.photography.model.PaymentSlip;
 import com.aura.photography.model.StudioBooking;
+import com.aura.photography.repository.PaymentSlipRepository;
 import com.aura.photography.repository.StudioBookingRepository;
 import com.aura.photography.service.booking.BookingService;
 import com.aura.photography.service.booking.StudioService;
@@ -14,10 +16,15 @@ import com.aura.photography.util.enums.PaymentStatus;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -36,6 +43,10 @@ public class StudioServiceImpl implements StudioService {
 
     private final BookingService bookingService;
     private final StudioBookingRepository studioBookingRepository;
+    private final PaymentSlipRepository paymentSlipRepository;
+    
+    @Value("${upload.dir:uploads/payment-slips}")
+    private String uploadDir;
 
     @Override
     public ResponseEntity<CommonResponse> setStudioBooking(StudioDTO studioDTO) {
@@ -46,9 +57,40 @@ public class StudioServiceImpl implements StudioService {
             bookingDTO.setCreatedBy(studioDTO.getCreatedBy());
             bookingDTO.setPaymentType(studioDTO.getPaymentType());
             bookingDTO.setPaymentAmount(studioDTO.getPaymentAmount());
-            bookingDTO.setPaymentStatus(studioDTO.getFullPayment() ? PaymentStatus.PAID : PaymentStatus.PARTIALLY_PAID);
+            
+            // If payment slip is uploaded, set status as PENDING for admin verification
+            // Otherwise, use the payment status based on fullPayment flag
+            boolean hasPaymentSlip = studioDTO.getFileBase64() != null && !studioDTO.getFileBase64().isEmpty();
+            if (hasPaymentSlip) {
+                bookingDTO.setPaymentStatus(PaymentStatus.PENDING);
+            } else {
+                bookingDTO.setPaymentStatus(studioDTO.getFullPayment() ? PaymentStatus.PAID : PaymentStatus.PARTIALLY_PAID);
+            }
 
-            studioBookingRepository.save(getStudioBooking(studioDTO, bookingService.createBooking(bookingDTO)));
+            Booking booking = bookingService.createBooking(bookingDTO);
+            studioBookingRepository.save(getStudioBooking(studioDTO, booking));
+            
+            // Handle payment slip if provided
+            if (hasPaymentSlip) {
+                try {
+                    Path uploadPath = Paths.get(uploadDir);
+                    if (!Files.exists(uploadPath)) {
+                        Files.createDirectories(uploadPath);
+                    }
+                    
+                    String fileExtension = studioDTO.getFileName().substring(studioDTO.getFileName().lastIndexOf("."));
+                    String uniqueFilename = "booking_slip_" + booking.getId() + "_" + System.currentTimeMillis() + fileExtension;
+                    Path filePath = uploadPath.resolve(uniqueFilename);
+                    
+                    byte[] fileBytes = Base64.getDecoder().decode(studioDTO.getFileBase64());
+                    Files.write(filePath, fileBytes);
+                    
+                    PaymentSlip paymentSlip = new PaymentSlip(booking, filePath.toString(), studioDTO.getFileName());
+                    paymentSlipRepository.save(paymentSlip);
+                } catch (Exception e) {
+                    log.error("Failed to save payment slip: ", e);
+                }
+            }
 
             log.debug("Studio booking saved successfully");
             return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_SUCCESS, "Studio Booking set Successfully", null, null), HttpStatus.OK);

@@ -14,6 +14,7 @@ import lombok.Getter;
 public enum PaymentStatus {
 
     PAID("PAID", "Paid"),
+    PENDING("PENDING", "Pending"),
     PARTIALLY_PAID("PARTIALLY_PAID", "Partial"),
     UNPAID("UNPAID", "Unpaid"), COMPLETED("COMPLETED","Completed" );
 
