@@ -1,5 +1,6 @@
 package com.aura.photography.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.aura.photography.dto.response.BookingDTO;
 import com.aura.photography.dto.response.OrderDTO;
 import com.aura.photography.dto.response.PhotoshootBookingDTO;
@@ -10,10 +11,17 @@ import com.aura.photography.util.enums.PaymentStatus;
 import com.aura.photography.util.enums.PaymentType;
 import com.aura.photography.util.mapper.OrderMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,12 +62,55 @@ public class OrderController {
     @Autowired
     private StudioBookingRepository studioBookingRepository;
     
+    @Autowired
+    private PaymentSlipRepository paymentSlipRepository;
+    
+    @Value("${file.upload-dir:uploads/payment-slips}")
+    private String uploadDir;
+    
     @GetMapping
     public ResponseEntity<?> getAllOrders() {
         try {
             List<Order> orders = orderRepository.findAllByOrderByOrderDateDesc();
-            List<OrderDTO> orderDTOs = OrderMapper.toDTOList(orders);
-            return ResponseEntity.ok(orderDTOs);
+            List<Map<String, Object>> ordersWithSlips = new ArrayList<>();
+            
+            for (Order order : orders) {
+                Map<String, Object> orderData = new HashMap<>();
+                orderData.put("id", order.getId());
+                orderData.put("orderNumber", order.getOrderNumber());
+                orderData.put("orderDate", order.getOrderDate());
+                orderData.put("status", order.getStatus());
+                orderData.put("totalAmount", order.getTotalAmount());
+                orderData.put("user", Map.of(
+                    "id", order.getUser().getId(),
+                    "firstName", order.getUser().getFirstName(),
+                    "lastName", order.getUser().getLastName(),
+                    "email", order.getUser().getEmail()
+                ));
+                
+                // Check if payment slip exists
+                PaymentSlip slip = paymentSlipRepository.findByOrder(order).orElse(null);
+                if (slip != null) {
+                    try {
+                        Path filePath = Paths.get(slip.getFilePath());
+                        byte[] fileBytes = Files.readAllBytes(filePath);
+                        String base64 = java.util.Base64.getEncoder().encodeToString(fileBytes);
+                        orderData.put("paymentSlip", Map.of(
+                            "fileName", slip.getFileName(),
+                            "fileBase64", base64,
+                            "uploadedAt", slip.getUploadedAt()
+                        ));
+                    } catch (Exception e) {
+                        orderData.put("paymentSlip", null);
+                    }
+                } else {
+                    orderData.put("paymentSlip", null);
+                }
+                
+                ordersWithSlips.add(orderData);
+            }
+            
+            return ResponseEntity.ok(ordersWithSlips);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to retrieve orders: " + e.getMessage());
         }
@@ -91,24 +142,21 @@ public class OrderController {
                 return ResponseEntity.badRequest().body("User not found");
             }
             
-            // Extract order data
             double totalAmount = Double.parseDouble(orderData.get("totalAmount").toString());
             double subtotal = Double.parseDouble(orderData.get("subtotal").toString());
             double serviceFee = Double.parseDouble(orderData.get("serviceFee").toString());
             double tax = Double.parseDouble(orderData.get("tax").toString());
             String paymentMethod = orderData.get("paymentMethod").toString();
             
-            // Create payment record
             Payment payment = new Payment();
             payment.setUser(user);
             payment.setAmount(totalAmount);
-            payment.setPaymentType(PaymentType.CARD); // Default to card for now
+            payment.setPaymentType(PaymentType.CARD);
             payment.setPaymentStatus(PaymentStatus.COMPLETED);
             payment.setTransactionId(UUID.randomUUID().toString());
             payment.setPaymentDate(LocalDateTime.now());
             
-            // Add card details if available
-            if (orderData.containsKey("cardDetails")) {
+            if (orderData.containsKey("cardDetails") && orderData.get("cardDetails") != null) {
                 Map<String, Object> cardDetails = (Map<String, Object>) orderData.get("cardDetails");
                 payment.setCardLast4(cardDetails.get("last4").toString());
                 payment.setCardType(cardDetails.get("cardType").toString());
@@ -116,7 +164,6 @@ public class OrderController {
             
             Payment savedPayment = paymentRepository.save(payment);
             
-            // Create Order
             Order order = new Order();
             order.setUser(user);
             order.setPayment(savedPayment);
@@ -126,18 +173,15 @@ public class OrderController {
             order.setServiceFee(serviceFee);
             order.setTax(tax);
             order.setOrderDate(LocalDateTime.now());
-            order.setStatus("PAID");
+            order.setStatus(paymentMethod.equals("slip") ? "PENDING" : "PAID");
             
             Order savedOrder = orderRepository.save(order);
             
-            // Create Order Items and update gear stock
             List<Cart> userCartItems = cartRepository.findByUser(user);
             List<OrderItem> orderItems = new ArrayList<>();
             
             for (Cart cartItem : userCartItems) {
                 Gear gear = cartItem.getGear();
-                
-                // Create order item
                 OrderItem orderItem = new OrderItem(
                     savedOrder,
                     gear,
@@ -148,7 +192,6 @@ public class OrderController {
                 );
                 orderItems.add(orderItem);
                 
-                // Update gear stock
                 int newStock = gear.getStock() - cartItem.getQuantity();
                 if (newStock < 0) newStock = 0;
                 gear.setStock(newStock);
@@ -156,12 +199,34 @@ public class OrderController {
                 gearRepository.save(gear);
             }
             
-            // Save all order items
             orderItemRepository.saveAll(orderItems);
             savedOrder.setOrderItems(orderItems);
-            
-            // Clear user's cart
             cartRepository.deleteAll(userCartItems);
+            
+            // Handle base64 file upload if provided
+            if (orderData.containsKey("fileBase64") && orderData.get("fileBase64") != null) {
+                try {
+                    String fileBase64 = orderData.get("fileBase64").toString();
+                    String fileName = orderData.get("fileName").toString();
+                    
+                    Path uploadPath = Paths.get(uploadDir);
+                    if (!Files.exists(uploadPath)) {
+                        Files.createDirectories(uploadPath);
+                    }
+                    
+                    String fileExtension = fileName.substring(fileName.lastIndexOf("."));
+                    String uniqueFilename = "slip_" + savedOrder.getId() + "_" + System.currentTimeMillis() + fileExtension;
+                    Path filePath = uploadPath.resolve(uniqueFilename);
+                    
+                    byte[] fileBytes = java.util.Base64.getDecoder().decode(fileBase64);
+                    Files.write(filePath, fileBytes);
+                    
+                    PaymentSlip paymentSlip = new PaymentSlip(savedOrder, filePath.toString(), fileName);
+                    paymentSlipRepository.save(paymentSlip);
+                } catch (Exception e) {
+                    System.err.println("Failed to upload payment slip: " + e.getMessage());
+                }
+            }
             
             return ResponseEntity.ok(Map.of(
                 "message", "Order created successfully",
@@ -282,26 +347,73 @@ public class OrderController {
     @PutMapping("/{orderId}/status")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestBody Map<String, String> statusData, Authentication authentication) {
         try {
-            System.out.println("11");
             String userEmail = authentication.getName();
             User user = userRepository.findByEmail(userEmail).orElse(null);
-//            if (user == null || !"ADMIN".equals(user.getRole())) {
-//                return ResponseEntity.status(403).body("Access denied");
-//            }
 
             Order order = orderRepository.findById(orderId).orElse(null);
             if (order == null) {
                 return ResponseEntity.badRequest().body("Order not found");
             }
-            System.out.println(statusData.get("status"));
+            
             String newStatus = statusData.get("status");
             order.setStatus(newStatus);
-            System.out.println("22");
             orderRepository.save(order);
 
             return ResponseEntity.ok(Map.of("message", "Order status updated successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to update order status: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/{orderId}/upload-slip")
+    public ResponseEntity<?> uploadPaymentSlip(@PathVariable Long orderId, @RequestParam("file") MultipartFile file, Authentication authentication) {
+        try {
+            String userEmail = authentication.getName();
+            User user = userRepository.findByEmail(userEmail).orElse(null);
+            if (user == null) {
+                return ResponseEntity.badRequest().body("User not found");
+            }
+            
+            Order order = orderRepository.findById(orderId).orElse(null);
+            if (order == null) {
+                return ResponseEntity.badRequest().body("Order not found");
+            }
+            
+            if (!order.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).body("Access denied");
+            }
+            
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("File is empty");
+            }
+            
+            // Create upload directory if not exists
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String uniqueFilename = "slip_" + orderId + "_" + System.currentTimeMillis() + fileExtension;
+            Path filePath = uploadPath.resolve(uniqueFilename);
+            
+            // Save file
+            Files.copy(file.getInputStream(), filePath);
+            
+            // Save payment slip record
+            PaymentSlip paymentSlip = new PaymentSlip(order, filePath.toString(), originalFilename);
+            paymentSlipRepository.save(paymentSlip);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Payment slip uploaded successfully",
+                "fileName", uniqueFilename
+            ));
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body("Failed to upload file: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to upload payment slip: " + e.getMessage());
         }
     }
 }
