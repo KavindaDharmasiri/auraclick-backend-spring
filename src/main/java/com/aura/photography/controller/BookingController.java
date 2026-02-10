@@ -97,4 +97,28 @@ public class BookingController {
         log.info("BookingController -> updateStatuses -> (Request Type: PATCH) -> /v1/bookings/admin/updateStatuses -> Request by User: {}", principal != null ? principal.getName() : "anonymous");
         return bookingAdminService.updateStatuses(requestDTO);
     }
+
+    // Admin view payment slip
+    @Operation(summary = "View payment slip (admin)", description = "Download/view payment slip file")
+    @GetMapping("admin/paymentSlip/{slipId}")
+    public ResponseEntity<?> viewPaymentSlip(@PathVariable Long slipId, Principal principal) {
+        log.info("BookingController -> viewPaymentSlip -> (Request Type: GET) -> /v1/bookings/admin/paymentSlip/{} -> Request by User: {}", slipId, principal != null ? principal.getName() : "anonymous");
+        return bookingAdminService.getPaymentSlip(slipId);
+    }
+
+    // Admin approve payment slip
+    @Operation(summary = "Approve payment slip (admin)", description = "Approve payment slip and mark as PAID")
+    @PostMapping("admin/paymentSlip/approve/{bookingId}")
+    public ResponseEntity<?> approvePaymentSlip(@PathVariable Long bookingId, Principal principal) {
+        log.info("BookingController -> approvePaymentSlip -> (Request Type: POST) -> /v1/bookings/admin/paymentSlip/approve/{} -> Request by User: {}", bookingId, principal != null ? principal.getName() : "anonymous");
+        return bookingAdminService.approvePaymentSlip(bookingId);
+    }
+
+    // Admin reject payment slip
+    @Operation(summary = "Reject payment slip (admin)", description = "Reject payment slip and mark as UNPAID")
+    @PostMapping("admin/paymentSlip/reject/{bookingId}")
+    public ResponseEntity<?> rejectPaymentSlip(@PathVariable Long bookingId, Principal principal) {
+        log.info("BookingController -> rejectPaymentSlip -> (Request Type: POST) -> /v1/bookings/admin/paymentSlip/reject/{} -> Request by User: {}", bookingId, principal != null ? principal.getName() : "anonymous");
+        return bookingAdminService.rejectPaymentSlip(bookingId);
+    }
 }

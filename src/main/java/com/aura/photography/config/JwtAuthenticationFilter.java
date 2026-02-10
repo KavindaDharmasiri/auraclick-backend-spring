@@ -30,9 +30,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String username = null;
 
         System.out.println("Auth header: " + authHeader);
+        System.out.println("Request URI: " + request.getRequestURI());
+        System.out.println("Query String: " + request.getQueryString());
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
+            System.out.println("Token from header: " + token.substring(0, Math.min(20, token.length())) + "...");
+        } else {
+            // Check for token in query parameter (for iframe/image viewing)
+            token = request.getParameter("token");
+            if (token != null) {
+                System.out.println("Token from query param: " + token.substring(0, Math.min(20, token.length())) + "...");
+            } else {
+                System.out.println("No token found in header or query param");
+            }
+        }
+
+        if (token != null) {
             try {
                 username = extractUsername(token);
                 System.out.println("Extracted username: " + username);
@@ -51,6 +65,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .parseSignedClaims(token)
                     .getPayload()
                     .get("role", String.class);
+                
+                System.out.println("User role: " + role);
                 
                 UsernamePasswordAuthenticationToken authToken = 
                     new UsernamePasswordAuthenticationToken(username, null, 

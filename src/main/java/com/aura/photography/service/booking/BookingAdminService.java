@@ -17,4 +17,10 @@ public interface BookingAdminService {
     ResponseEntity<CommonResponse> getDashboardMetrics();
 
     ResponseEntity<CommonResponse> updateStatuses(BookingStatusUpdateDTO request);
+    
+    ResponseEntity<?> getPaymentSlip(Long slipId);
+    
+    ResponseEntity<CommonResponse> approvePaymentSlip(Long bookingId);
+    
+    ResponseEntity<CommonResponse> rejectPaymentSlip(Long bookingId);
 }

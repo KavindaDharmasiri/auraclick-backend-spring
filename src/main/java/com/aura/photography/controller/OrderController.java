@@ -416,4 +416,36 @@ public class OrderController {
             return ResponseEntity.badRequest().body("Failed to upload payment slip: " + e.getMessage());
         }
     }
+    
+    @GetMapping("/{orderId}/paymentSlip")
+    public ResponseEntity<?> getPaymentSlip(@PathVariable Long orderId) {
+        try {
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+            
+            PaymentSlip slip = paymentSlipRepository.findByOrder(order)
+                    .orElseThrow(() -> new IllegalArgumentException("Payment slip not found"));
+            
+            Path filePath = Paths.get(slip.getFilePath());
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(filePath.toUri());
+            
+            if (!resource.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            String contentType = "application/octet-stream";
+            String filename = slip.getFileName();
+            if (filename != null) {
+                if (filename.toLowerCase().endsWith(".pdf")) contentType = "application/pdf";
+                else if (filename.toLowerCase().matches(".*\\.(jpg|jpeg|png|gif)")) contentType = "image/" + filename.substring(filename.lastIndexOf('.') + 1);
+            }
+            
+            return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .body(resource);
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body("Failed to retrieve payment slip: " + ex.getMessage());
+        }
+    }
 }

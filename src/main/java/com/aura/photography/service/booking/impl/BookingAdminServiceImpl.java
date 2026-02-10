@@ -23,12 +23,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -47,6 +53,7 @@ public class BookingAdminServiceImpl implements BookingAdminService {
     private final BookingRepository bookingRepository;
     private final PhotoshootBookingRepository photoshootBookingRepository;
     private final StudioBookingRepository studioBookingRepository;
+    private final com.aura.photography.repository.PaymentSlipRepository paymentSlipRepository;
 
     @Override
     public ResponseEntity<CommonResponse> getBookingTable(BookingAdminDTO request) {
@@ -220,6 +227,17 @@ public class BookingAdminServiceImpl implements BookingAdminService {
         }
 
         dto.setPaymentStatus(b.getPaymentStatus() != null ? b.getPaymentStatus().getDescription() : null);
+        
+        // Initialize payment slip fields
+        dto.setHasPaymentSlip(false);
+        dto.setPaymentSlipId(null);
+        
+        // Check if payment slip exists
+        paymentSlipRepository.findByBooking(b).ifPresent(slip -> {
+            dto.setHasPaymentSlip(true);
+            dto.setPaymentSlipId(slip.getId());
+        });
+        
         return dto;
     }
 
@@ -262,5 +280,67 @@ public class BookingAdminServiceImpl implements BookingAdminService {
         }
         // Fallback: return the raw code if unknown
         return code;
+    }
+
+    @Override
+    public ResponseEntity<?> getPaymentSlip(Long slipId) {
+        try {
+            var slip = paymentSlipRepository.findById(slipId)
+                    .orElseThrow(() -> new IllegalArgumentException("Payment slip not found"));
+            
+            Path filePath = Paths.get(slip.getFilePath());
+            Resource resource = new UrlResource(filePath.toUri());
+            
+            if (!resource.exists()) {
+                return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_FAILURE, "File not found", null, null), HttpStatus.NOT_FOUND);
+            }
+            
+            String contentType = "application/octet-stream";
+            String filename = slip.getFileName();
+            if (filename != null) {
+                if (filename.toLowerCase().endsWith(".pdf")) contentType = "application/pdf";
+                else if (filename.toLowerCase().matches(".*\\.(jpg|jpeg|png|gif)")) contentType = "image/" + filename.substring(filename.lastIndexOf('.') + 1);
+            }
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .body(resource);
+        } catch (Exception ex) {
+            log.error("Error getting payment slip", ex);
+            return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_FAILURE, "Failed to retrieve payment slip", null, null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<CommonResponse> approvePaymentSlip(Long bookingId) {
+        try {
+            Booking booking = bookingRepository.findById(bookingId)
+                    .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+            
+            booking.setPaymentStatus(PaymentStatus.PAID);
+            bookingRepository.save(booking);
+            
+            return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_SUCCESS, "Payment slip approved", null, null), HttpStatus.OK);
+        } catch (Exception ex) {
+            log.error("Error approving payment slip", ex);
+            return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_FAILURE, "Failed to approve payment slip", null, null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<CommonResponse> rejectPaymentSlip(Long bookingId) {
+        try {
+            Booking booking = bookingRepository.findById(bookingId)
+                    .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+            
+            booking.setPaymentStatus(PaymentStatus.UNPAID);
+            bookingRepository.save(booking);
+            
+            return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_SUCCESS, "Payment slip rejected", null, null), HttpStatus.OK);
+        } catch (Exception ex) {
+            log.error("Error rejecting payment slip", ex);
+            return new ResponseEntity<>(new CommonResponse(RESPONSE_CODE_FAILURE, "Failed to reject payment slip", null, null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

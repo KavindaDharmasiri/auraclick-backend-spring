@@ -33,6 +33,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-ui.html").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/bookings/admin/paymentSlip/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/bookings/admin/paymentSlip/**").hasRole("ADMIN")
+                .requestMatchers("/api/orders/*/paymentSlip").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/gear").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/gear/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/gear/**").hasRole("ADMIN")

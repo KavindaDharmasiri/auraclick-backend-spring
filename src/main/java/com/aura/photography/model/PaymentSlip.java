@@ -11,11 +11,11 @@ public class PaymentSlip {
     private Long id;
     
     @OneToOne
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id" , nullable = true)
     private Order order;
     
     @OneToOne
-    @JoinColumn(name = "booking_id")
+    @JoinColumn(name = "booking_id" , nullable = true)
     private Booking booking;
     
     @Column(name = "file_path", nullable = false)

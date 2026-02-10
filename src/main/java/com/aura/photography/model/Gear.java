@@ -32,7 +32,7 @@ public class Gear {
     
     @ElementCollection
     @CollectionTable(name = "gear_images", joinColumns = @JoinColumn(name = "gear_id"))
-    @Column(name = "image_url", columnDefinition = "TEXT")
+    @Column(name = "image_url", columnDefinition = "LONGTEXT")
     private List<String> images;
 
     // Constructors

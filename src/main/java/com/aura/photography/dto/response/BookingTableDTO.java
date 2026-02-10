@@ -19,4 +19,6 @@ public class BookingTableDTO {
     private BookingStatus bookingStatus;
     private String duration;
     private String paymentStatus;
+    private Boolean hasPaymentSlip;
+    private Long paymentSlipId;
 }
